@@ -32,14 +32,10 @@ export async function POST(request: Request) {
     // const newTodo = { id: ++currentId, text };
     // todos.push(newTodo);
     const todo = await request.json();
-    const todoWithId = {
-        id: Date.now(),
-        ...todo
-    }
     const response = await fetch(API_URL, {
         method: 'POST',
         headers:  {'Content-Type': 'application/json'},
-        body: JSON.stringify(todoWithId),
+        body: JSON.stringify(todo),
     });
     const newTodo = await response.json();
 
