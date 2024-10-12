@@ -5,6 +5,15 @@ import { ObjectId } from 'mongodb';
 const dbName = 'todo-app';
 const collectionName = 'todos';
 
+// _id를 id로 변환하는 함수 추가
+function transformId(doc: any) {
+    if (doc._id) {
+        doc.id = doc._id.toString();
+        delete doc._id;
+    }
+    return doc;
+}
+
 // CRUD 중 Read 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -19,7 +28,7 @@ export async function GET(request: Request) {
             // 단건 조회
             const todo = await collection.findOne({ _id: new ObjectId(id) });
             if (todo) {
-                return NextResponse.json(todo);
+                return NextResponse.json(transformId(todo));
             } else {
                 return NextResponse.json({ error: '할 일을 찾을 수 없습니다.' }, { status: 404 });
             }
@@ -27,7 +36,7 @@ export async function GET(request: Request) {
 
         // 다건 조회
         const todos = await collection.find({}).toArray();
-        return NextResponse.json(todos);
+        return NextResponse.json(todos.map(transformId));
     } catch (error) {
         console.error('MongoDB 조회 중 오류 발생:', error);
         return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
@@ -46,8 +55,7 @@ export async function POST(request: Request) {
 
         const result = await collection.insertOne(todo);
         const newTodo = await collection.findOne({ _id: result.insertedId });
-
-        return NextResponse.json(newTodo, { status: 201 });
+        return NextResponse.json(transformId(newTodo), { status: 201 });
     } catch (error) {
         console.error('MongoDB 생성 중 오류 발생:', error);
         return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
@@ -70,10 +78,8 @@ export async function PUT(request: Request) {
             { returnDocument: 'after' }
         );
 
-        console.log(result);
-
         if (result) {
-            return NextResponse.json(result, { status: 200 });
+            return NextResponse.json(transformId(result), { status: 200 });
         }
         return NextResponse.json({ error: '할 일을 찾을 수 없습니다.' }, { status: 404 });
     } catch (error) {
