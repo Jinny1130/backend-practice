@@ -11,7 +11,7 @@ interface Todo {
 const TodoList: React.FC = () => {
 	const [todos, setTodos] = useState<Todo[]>([]);
 	const [input, setInput] = useState('');
-	const [modifyValue, setModifyValue] = useState<Todo>();
+	const [modifyTodos, setModifyTodos] = useState<Todo[]>([]);
 
 	useEffect(() => {
 		getTodoList();
@@ -103,7 +103,22 @@ const TodoList: React.FC = () => {
 
 	}
 
-	const modifyTodo = (modifyMode: any) => {
+	const modifyTodo = (targetTodo: any) => {
+
+		const updateTodos = todos.map(todo => {
+			if(todo.id === targetTodo.id) {
+				return {
+					...todo,
+					modifyMode: !todo.modifyMode
+				}
+			}
+			return todo;
+		});
+
+		setTodos(updateTodos);
+	}
+
+	const modifyInputEvent = (id: string, modifyTodo: string) => {
 
 	}
 
@@ -128,20 +143,21 @@ const TodoList: React.FC = () => {
 							<input
 								type="text"
 								value={todo.text}
-								onChange={(e) => updateTodo(todo.id, e.target.value)}
+								onChange={(e) => modifyInputEvent(todo.id, e.target.value)}
 								className="flex-grow p-2 border rounded mr-2"
 							/>
 							:
 							<p className="flex-grow p-2 rounded mr-2">{todo.text}</p>
 						}
 						<div className='flex'>
-								<button onClick={() => modifyTodo(todo.modifyMode)} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">{todo.modifyMode ? '취소' : '수정'}</button>
+								<button onClick={() => modifyTodo(todo)} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">
+									{todo.modifyMode ? '취소' : '수정'}
+								</button>
 								<button onClick={() => todo.modifyMode ? saveModifyTodo(todo.id) : deleteTodo(todo.id)} 
 											className={`${todo.modifyMode ? 'bg-sky-500 hover:bg-sky-700' : 'bg-red-500 hover:bg-red-700' } text-white p-2 rounded"`}>
 												{todo.modifyMode ? '저장' : '삭제'}
 								</button>
 						</div>
-						<p>modify: {todo.modifyMode ? 'true' : 'false'}</p>
 					</li>
 				))}
 			</ul>
