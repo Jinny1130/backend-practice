@@ -1,5 +1,6 @@
 'use client'
 
+import { resolve } from 'path';
 import React, { useEffect, useState } from 'react';
 
 interface Todo {
@@ -11,99 +12,107 @@ interface Todo {
 const TodoList: React.FC = () => {
 	const [todos, setTodos] = useState<Todo[]>([]);
 	const [input, setInput] = useState('');
-	const [modifyTodos, setModifyTodos] = useState<Todo[]>([]);
+	const [modifyInput, setModifyInput] = useState('');
 
 	useEffect(() => {
 		getTodoList();
 	}, [])
 
-	const getTodoList = () => {
-		fetch('http://localhost:3000/api/todos')
-			.then((response) => {
-				if (response.ok) {
-					return response.json();
-				}
-				else {
-					throw new Error('Network response was not ok');
-				}
-			})
-			.then((result) => {
-				let todoListAddModifyMode = result.map((todo: Todo) => ({
-					...todo,
-					modifyMode: false
-				}))
-				setTodos(todoListAddModifyMode);
-			})
+	const getTodoList = async () => {
+		try {
+			const response = await fetch('http://localhost:3000/api/todos');
+			const result = await response.json();
+			
+			if (!response.ok) {
+				console.log(response.status, result.error);
+				return
+			}
+			
+			let todoListAddModifyMode = result.map((todo: Todo) => ({
+				...todo,
+				modifyMode: false
+			}))
+			setTodos(todoListAddModifyMode);
+
+		} catch(err) {
+			console.log(err)
+		}
 	}
 
-	const addTodo = () => {
-		let addTodo ={ text : input.trim() };
-		fetch('http://localhost:3000/api/todos', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(addTodo),
-		})
-		.then((response) => {
-			if (response.ok) {
-				getTodoList();
+	const addTodo = async () => {
+		try {
+			let addTodo = { text: input.trim() };
+
+			const response = await fetch('http://localhost:3000/api/todos', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(addTodo),
+			})
+			const result = await response.json();
+
+			if (!response.ok) {
+				console.log(response.status, result.error);
 				return
 			}
-			else {
-				throw new Error(`${response.status} : ${response.statusText}`);
-			}
-		})
-		.catch(err => {
-			return alert(err);
-		})
-		setInput('');
+
+			getTodoList();
+
+		} catch(err) {
+			console.log(err);
+		} finally {
+			setInput('');
+		}
 	};
 
-	const updateTodo = (id: string, newText: string) => {
-		// setTodos(todos.map(todo => todo.id === id ? { ...todo, text: newText } : todo));
-		fetch('http://localhost:3000/api/todos', {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: id, text: newText })
-		})
-		.then(response => {
-			if(response.ok) {
-				getTodoList();
+	const deleteTodo = async (id: string) => {
+		try {
+			const response = await fetch('http://localhost:3000/api/todos', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: id }),
+			})
+
+			if (!response.ok) {
+				console.log(response);
 				return
 			}
-			else {
-				throw new Error(`${response.status} : ${response.statusText}`);
-			}
-		})
-		.catch(err => {
-			return alert(err);
-		})
+
+			getTodoList();
+
+		} catch(err) {
+			console.log(err)
+		}
 	};
 
-	const deleteTodo = (id: string) => {
-		fetch('http://localhost:3000/api/todos', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ id: id }),
-		})
-		.then((response) => {
-			if(response.ok) {
-				getTodoList();
+	const saveModifyTodo = async (id:string) => {
+		try {
+			const targetTodo: object = { 
+				id: id, 
+				text: modifyInput 
+			}
+			const response = await fetch('http://localhost:3000/api/todos', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(targetTodo)
+			})
+
+			if(!response.ok) {
+				console.log(response)
 				return
 			}
-			else {
-				throw new Error(`${response.status} : ${response.statusText}`);
-			}
-		})
-		.catch(err => {
-			return alert(err);
-		})
-	};
 
-	const saveModifyTodo = (id:string) => {
+			showModifyInput(targetTodo);
+			getTodoList();
 
+		} catch(err) {
+			console.log(err);
+		} finally {
+			setModifyInput('');
+		}
 	}
 
-	const modifyTodo = (targetTodo: any) => {
+	// 수정상태로 ui 노출
+	const showModifyInput = (targetTodo: any) => {
 
 		const updateTodos = todos.map(todo => {
 			if(todo.id === targetTodo.id) {
@@ -116,10 +125,6 @@ const TodoList: React.FC = () => {
 		});
 
 		setTodos(updateTodos);
-	}
-
-	const modifyInputEvent = (id: string, modifyTodo: string) => {
-
 	}
 
 	return (
@@ -142,19 +147,20 @@ const TodoList: React.FC = () => {
 							todo.modifyMode ? 
 							<input
 								type="text"
-								value={todo.text}
-								onChange={(e) => modifyInputEvent(todo.id, e.target.value)}
+								value={modifyInput}
+								onChange={(e) => setModifyInput(e.target.value)}
 								className="flex-grow p-2 border rounded mr-2"
 							/>
 							:
 							<p className="flex-grow p-2 rounded mr-2">{todo.text}</p>
 						}
 						<div className='flex'>
-								<button onClick={() => modifyTodo(todo)} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">
+								<button onClick={() => [todo.modifyMode ? setModifyInput('') : setModifyInput(todo.text), showModifyInput(todo)]} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">
 									{todo.modifyMode ? '취소' : '수정'}
 								</button>
 								<button onClick={() => todo.modifyMode ? saveModifyTodo(todo.id) : deleteTodo(todo.id)} 
-											className={`${todo.modifyMode ? 'bg-sky-500 hover:bg-sky-700' : 'bg-red-500 hover:bg-red-700' } text-white p-2 rounded"`}>
+											className={`${todo.modifyMode ? 'bg-sky-500 hover:bg-sky-700 rounded disabled:bg-slate-100' : 'bg-red-500 rounded hover:bg-red-700' } text-white p-2 rounded"`}
+											disabled={todo.modifyMode ? !modifyInput || todo.text === modifyInput : false}>
 												{todo.modifyMode ? '저장' : '삭제'}
 								</button>
 						</div>
