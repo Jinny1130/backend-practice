@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getTodos, addTodo, modifyTodo, deleteTodo } from '@/services/TodoService';
+import { getTodos, getTodo, addTodo, modifyTodo, deleteTodo } from '@/services/TodoService';
 import NotFoundError from '@/errors/NotFoundError';
+import { Todo } from '@/types/Todo';
 
 // CRUD 중 Read 
 export async function GET(request: Request) {
@@ -8,8 +9,10 @@ export async function GET(request: Request) {
     const id = searchParams.get('id');
 
     try {
-        const todos = await getTodos(id);
-        return NextResponse.json(todos);
+
+        if (id) return NextResponse.json(await getTodo(id));
+        else return NextResponse.json(await getTodos());
+
     } catch (error) {
         if (error instanceof NotFoundError) {
             return NextResponse.json({ error: error.message }, { status: 404 });
@@ -21,7 +24,7 @@ export async function GET(request: Request) {
 
 //  CRUD 중 Create
 export async function POST(request: Request) {
-    const todo = await request.json();
+    const todo: Todo = await request.json();
     
     try {
         const newTodo = await addTodo(todo);
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
 
 // CRUD 중 Update
 export async function PUT(request: Request) {
-    const todo = await request.json();
+    const todo: Todo = await request.json();
     try {
         const updatedTodo = await modifyTodo(todo);
         return NextResponse.json(updatedTodo);
@@ -49,10 +52,10 @@ export async function PUT(request: Request) {
 
 // CRUD 중 Delete
 export async function DELETE(request: Request) {
-    const todo = await request.json();
+    const todo: Todo = await request.json();
     try {
-        const deleted = await deleteTodo(todo);
-        return NextResponse.json(deleted);
+        await deleteTodo(todo);
+        return NextResponse.json({});
     } catch (error) {
         if (error instanceof Error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

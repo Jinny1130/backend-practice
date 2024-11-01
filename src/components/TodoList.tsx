@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 
 interface Todo {
 	id: string;
-	text: string;
+	content: string;
 	modifyMode? : boolean
 }
 
@@ -41,7 +41,10 @@ const TodoList: React.FC = () => {
 
 	const addTodo = async () => {
 		try {
-			let addTodo = { text: input.trim() };
+			let addTodo = { 
+				title: input.trim(),
+				content: input.trim() 
+			};
 
 			const response = await fetch('http://localhost:3000/api/todos', {
 				method: 'POST',
@@ -88,7 +91,7 @@ const TodoList: React.FC = () => {
 		try {
 			const targetTodo: object = { 
 				id: id, 
-				text: modifyInput 
+				content: modifyInput 
 			}
 			const response = await fetch('http://localhost:3000/api/todos', {
 				method: 'PUT',
@@ -152,15 +155,15 @@ const TodoList: React.FC = () => {
 								className="flex-grow p-2 border rounded mr-2"
 							/>
 							:
-							<p className="flex-grow p-2 rounded mr-2">{todo.text}</p>
+							<p className="flex-grow p-2 rounded mr-2">{todo.content}</p>
 						}
 						<div className='flex'>
-								<button onClick={() => [todo.modifyMode ? setModifyInput('') : setModifyInput(todo.text), showModifyInput(todo)]} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">
+								<button onClick={() => [todo.modifyMode ? setModifyInput('') : setModifyInput(todo.content), showModifyInput(todo)]} className="bg-gray-500 text-white p-2 mr-2 rounded hover:bg-gray-700">
 									{todo.modifyMode ? '취소' : '수정'}
 								</button>
 								<button onClick={() => todo.modifyMode ? saveModifyTodo(todo.id) : deleteTodo(todo.id)} 
 											className={`${todo.modifyMode ? 'bg-sky-500 hover:bg-sky-700 rounded disabled:bg-slate-100' : 'bg-red-500 rounded hover:bg-red-700' } text-white p-2 rounded"`}
-											disabled={todo.modifyMode ? !modifyInput || todo.text === modifyInput : false}>
+											disabled={todo.modifyMode ? !modifyInput || todo.content === modifyInput : false}>
 												{todo.modifyMode ? '저장' : '삭제'}
 								</button>
 						</div>
